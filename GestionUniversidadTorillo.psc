@@ -27,9 +27,9 @@ Algoritmo Universidad
 				1:
 					MenuAdministrador(materias, alumnos, profesores, materiaProfesor, inscripciones, notas, usuarios, contraseñas, roles, totalMaterias, totalAlumnos, totalProfesores, totalUsuarios, intentosFallidos, estadoUsuario)
 				2:
-					MenuProfesor(materias, alumnos, profesores, materiaProfesor, notas, inscripciones, totalMaterias, totalAlumnos, totalProfesores, usuarios[idUsuarioActual])
+					MenuProfesor(materias, alumnos, profesores, materiaProfesor, notas, inscripciones, totalMaterias, totalAlumnos, totalProfesores, idUsuarioActual, usuarios, contraseñas, totalUsuarios)
 				3:
-					MenuAlumno(materias, alumnos, notas, inscripciones, totalMaterias, totalAlumnos, usuarios[idUsuarioActual])
+					MenuAlumno(materias, alumnos, notas, inscripciones, totalMaterias, totalAlumnos, idUsuarioActual, usuarios, contraseñas, totalUsuarios)
 			FinSegun
 		FinSi
 	Hasta Que salirPrograma
@@ -318,28 +318,30 @@ SubProceso MenuAdministrador(materias Por Referencia, alumnos Por Referencia, pr
 FinSubProceso
 
 //Profesor
-SubProceso MenuProfesor(materias, alumnos, profesores, materiaProfesor, notas Por Referencia, inscripciones, totalMaterias, totalAlumnos, totalProfesores, nombreProfesor)
-	// Variables
-	Definir op, idProfesorActual, cont, i, opcionMateria, idMateria, nota Como Entero
+SubProceso MenuProfesor(materias, alumnos, profesores, materiaProfesor, notas Por Referencia, inscripciones, totalMaterias, totalAlumnos, totalProfesores, idUsuarioLogueado, usuarios, contraseñas Por Referencia, totalUsuarios)
+	//Variables
+	Definir op, i, cont, opcionMateria, idMateria, nota, cant, idProfesorLocal Como Entero
+	Definir suma, promedio Como Real
+	Definir pass_actual, pass_nueva1, pass_nueva2 Como Cadena
 	Dimension listaMaterias[10]
 	
-	// ID del profesor
-	idProfesorActual <- BuscarIdUsuario(profesores, totalProfesores, nombreProfesor)
+	idProfesorLocal <- BuscarIdUsuario(profesores, totalProfesores, usuarios[idUsuarioLogueado])
 	
 	Repetir
-		Escribir "=== Menu Profesor - ", nombreProfesor, " ==="
+		Escribir "=== Menu Profesor - ", usuarios[idUsuarioLogueado], " ==="
 		Escribir "1. Cargar notas"
 		Escribir "2. Ver mis materias (con promedios)"
-		Escribir "3. Salir"
+		Escribir "3. Cambiar Contraseña"
+		Escribir "4. Salir"
 		Leer op
 		Limpiar Pantalla
 		
-		Si idProfesorActual > 0 Entonces
+		Si idProfesorLocal > 0 Entonces
 			Segun op Hacer
-				1://Cargar Notas
+				1: // Cargar Notas
 					cont <- 0
 					Para i <- 1 Hasta totalMaterias
-						Si materiaProfesor[i] = idProfesorActual Entonces
+						Si materiaProfesor[i] = idProfesorLocal Entonces
 							cont <- cont + 1
 							listaMaterias[cont] <- i
 						FinSi
@@ -361,11 +363,11 @@ SubProceso MenuProfesor(materias, alumnos, profesores, materiaProfesor, notas Po
 								notas[i,idMateria] <- nota
 							FinSi
 						FinPara
-					FinSi				
-				2://Ver Materias
+					FinSi
+				2: // Ver Materias y Promedios
 					cont <- 0
 					Para i <- 1 Hasta totalMaterias
-						Si materiaProfesor[i] = idProfesorActual Entonces
+						Si materiaProfesor[i] = idProfesorLocal Entonces
 							cont <- cont + 1
 							listaMaterias[cont] <- i
 						FinSi
@@ -406,66 +408,86 @@ SubProceso MenuProfesor(materias, alumnos, profesores, materiaProfesor, notas Po
 							Escribir "No hay alumnos con notas cargadas en esta materia."
 						FinSi
 					FinSi
-				3:
+				3: // Cambiar Contraseña
+					Escribir "--- Cambio de Contraseña ---"
+					Escribir "Ingrese su contraseña actual:"
+					Leer pass_actual
+					
+					Si contraseñas[idUsuarioLogueado] = pass_actual Entonces
+						Escribir "Ingrese su nueva contraseña:"
+						Leer pass_nueva1
+						Escribir "Confirme su nueva contraseña:"
+						Leer pass_nueva2
+						
+						Si pass_nueva1 = pass_nueva2 Entonces
+							contraseñas[idUsuarioLogueado] <- pass_nueva1
+							Escribir "Contraseña actualizada con éxito."
+						SiNo
+							Escribir "Las contraseñas nuevas no coinciden."
+						FinSi
+					SiNo
+						Escribir "La contraseña actual es incorrecta."
+					FinSi
+				4:
 					Escribir "Cerrando sesión de profesor..."
-				De Otro Modo: Escribir "Opción no válida."
 			FinSegun
 		SiNo
 			Escribir "ERROR: No se pudo encontrar el perfil del profesor."
-			op <- 3
+			op <- 4
 		FinSi
 		
-		Si op <> 3 Entonces
+		Si op <> 4 Entonces
 			Escribir ""
 			Escribir "Presione una tecla para continuar..."
 			Esperar Tecla
 			Limpiar Pantalla
 		FinSi
 		
-	Hasta Que op = 3
-	
+	Hasta Que op = 4
 FinSubProceso
-
 //Alumno
-SubProceso MenuAlumno(materias, alumnos, notas, inscripciones Por Referencia, totalMaterias, totalAlumnos, nombreAlumno)
+SubProceso MenuAlumno(materias, alumnos, notas, inscripciones Por Referencia, totalMaterias, totalAlumnos, idUsuarioLogueado, usuarios, contraseñas Por Referencia, totalUsuarios)
 	//Variables
-	Definir op Como Entero
-	Definir idAlumnoActual Como Entero
+	Definir op, i, j, idMateria, cant Como Entero
+	Definir suma, promedio Como Real
+	Definir pass_actual, pass_nueva1, pass_nueva2 Como Cadena
 	
-	idAlumnoActual <- BuscarIdUsuario(alumnos, totalAlumnos, nombreAlumno)
+	Definir idAlumnoLocal Como Entero
+	idAlumnoLocal <- BuscarIdUsuario(alumnos, totalAlumnos, usuarios[idUsuarioLogueado])
 	
 	Repetir
-		Escribir "=== Menu Estudiante - ", nombreAlumno, " ==="
+		Escribir "=== Menu Estudiante - ", usuarios[idUsuarioLogueado]," ==="
 		Escribir "1. Inscribirse en materia"
 		Escribir "2. Ver mis notas y promedio"
-		Escribir "3. Salir"
+		Escribir "3. Cambiar Contraseña"
+		Escribir "4. Salir"
 		Leer op
 		Limpiar Pantalla
 		
-		Si idAlumnoActual > 0 Entonces
+		Si idAlumnoLocal > 0 Entonces
 			Segun op Hacer
-				1://Materias
+				1: // Inscribirse en materia
 					Escribir "Materias disponibles:"
 					Para i<-1 Hasta totalMaterias Hacer
 						Escribir i, ". ", materias[i]
 					FinPara
 					Escribir "Seleccione materia para inscribirse:"
 					Leer idMateria
-					inscripciones[idAlumnoActual,idMateria] <- 1
+					inscripciones[idAlumnoLocal, idMateria] <- 1
 					Escribir "Inscripción exitosa."
-				2://Notas
+				2: // Ver mis notas y promedio
 					Escribir "--- Tus Notas ---"
 					suma <- 0
 					cant <- 0
 					Para j<-1 Hasta totalMaterias Hacer
-						Si inscripciones[idAlumnoActual,j] = 1 Entonces
+						Si inscripciones[idAlumnoLocal,j] = 1 Entonces
 							Escribir materias[j], ": "
-							Si notas[idAlumnoActual,j] <> 0 Entonces
-								Escribir "   Nota: ", notas[idAlumnoActual,j]
-								suma <- suma + notas[idAlumnoActual,j]
+							Si notas[idAlumnoLocal,j] <> 0 Entonces
+								Escribir "   Nota: ", notas[idAlumnoLocal,j]
+								suma <- suma + notas[idAlumnoLocal,j]
 								cant <- cant + 1
 							SiNo
-								Escribir "   (sin nota cargada)"
+								Escribir "   (sin nota cargada)"
 							FinSi
 						FinSi
 					FinPara
@@ -477,22 +499,42 @@ SubProceso MenuAlumno(materias, alumnos, notas, inscripciones Por Referencia, to
 					SiNo
 						Escribir "Aún no tienes notas cargadas."
 					FinSi
-				3: Escribir "Cerrando sesión de alumno..."
-				De Otro Modo: Escribir "Opción no válida."
+				3: // Cambiar Contraseña
+					Escribir "--- Cambio de Contraseña ---"
+					Escribir "Ingrese su contraseña actual:"
+					Leer pass_actual
+					
+					Si contraseñas[idUsuarioLogueado] = pass_actual Entonces
+						Escribir "Ingrese su nueva contraseña:"
+						Leer pass_nueva1
+						Escribir "Confirme su nueva contraseña:"
+						Leer pass_nueva2
+						
+						Si pass_nueva1 = pass_nueva2 Entonces
+							contraseñas[idUsuarioLogueado] <- pass_nueva1
+							Escribir "Contraseña actualizada con éxito."
+						SiNo
+							Escribir "Las contraseñas nuevas no coinciden."
+						FinSi
+					SiNo
+						Escribir "La contraseña actual es incorrecta."
+					FinSi
+				4:
+					Escribir "Cerrando sesión de alumno..."
 			FinSegun
 		SiNo
 			Escribir "ERROR: No se pudo encontrar el perfil del alumno."
-			op <- 3 
+			op <- 4
 		FinSi
 		
-		Si op <> 3 Entonces
+		Si op <> 4 Entonces
 			Escribir ""
 			Escribir "Presione una tecla para continuar..."
 			Esperar Tecla
 			Limpiar Pantalla
 		FinSi
 		
-	Hasta Que op = 3
+	Hasta Que op = 4
 FinSubProceso
 
 // Función de ayuda para buscar la posición de un usuario en un arreglo
