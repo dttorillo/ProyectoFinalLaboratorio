@@ -1,1 +1,1 @@
-seguridad de intentos fallidos, bloqueo y desbloqueo de usuarios, cambio de contraseñas, correlatividades, estado de cursada, asistencias
+seguridad de intentos fallidos, evitar usuarios duplicados, bloqueo y desbloqueo de usuarios, cambio de contraseñas, correlatividades, estado de cursada, asistencias
